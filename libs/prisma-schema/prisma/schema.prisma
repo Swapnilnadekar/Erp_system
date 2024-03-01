@@ -1,0 +1,257 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SuperRoleName {
+  ADMIN
+}
+
+enum CollegeRoleName {
+  PRINCIPAL
+  HOD
+  ADMIN
+  PROFESSOR
+}
+
+model SuperRole {
+  id    Int             @id @default(autoincrement())
+  name  SuperRoleName   @unique
+  users UserSuperRole[]
+
+  @@map("super_roles")
+}
+
+model CollegeRole {
+  id     Int               @id @default(autoincrement())
+  name   CollegeRoleName   @unique
+  users  UserCollegeRole[]
+  User   User?             @relation(fields: [userId], references: [id])
+  userId Int?
+
+  @@map("college_roles")
+}
+
+model User {
+  id              Int               @id @default(autoincrement())
+  referenceId     String?           @unique @map("reference_id")
+  email           String            @unique
+  phoneNumber     String?           @map("phone_number")
+  firstName       String            @map("first_name")
+  lastName        String?           @map("last_name")
+  password        String?
+  token           String?
+  isActive        Boolean           @map("is_active")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime?         @updatedAt @map("updated_at") @db.Timestamptz()
+  superRoles      UserSuperRole[]
+  collegeRoles    CollegeRole[]
+  UserCollegeRole UserCollegeRole[]
+
+  @@map("users")
+}
+
+model UserSuperRole {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  superRoleId Int       @map("super_role_id")
+  user        User      @relation(fields: [userId], references: [id])
+  superRole   SuperRole @relation(fields: [superRoleId], references: [id])
+
+  @@map("users_super_roles")
+}
+
+model UserCollegeRole {
+  id            Int         @id @default(autoincrement())
+  userId        Int         @map("user_id")
+  collegeRoleId Int         @map("college_role_id")
+  collegeId     Int         @map("college_id")
+  isPrimary     Boolean     @default(false) @map("is_primary")
+  user          User        @relation(fields: [userId], references: [id])
+  collegeRole   CollegeRole @relation(fields: [collegeRoleId], references: [id])
+  college       College     @relation(fields: [collegeId], references: [id])
+
+  @@map("users_college_roles")
+}
+
+model College {
+  id              Int               @id @default(autoincrement()) @map("id")
+  name            String            @map("name")
+  addressLine1    String            @map("address_line_1")
+  addressLine2    String?           @map("address_line_2")
+  city            String
+  postalCode      String            @map("postal_code")
+  countryCode     String            @map("country_code")
+  stateCode       String?           @map("state_code")
+  email           String?           @map("email")
+  phoneNumber     String?           @map("phone_number")
+  principalId     Int               @map("principal_id")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime?         @updatedAt @map("updated_at") @db.Timestamptz()
+  isActive        Boolean           @map("is_active")
+  code            String            @map("code")
+  comp            COMP[]
+  it              IT[]
+  entc            ENTC[]
+  UserCollegeRole UserCollegeRole[]
+  pricipal        Principal         @relation(fields: [principalId], references: [id])
+  COllegeADMIN    COllegeADMIN?     @relation(fields: [cOllegeADMINId], references: [id])
+  cOllegeADMINId  Int?
+
+  @@unique([code])
+  @@map("colleges")
+}
+
+model COMP {
+  id        Int       @id @default(autoincrement()) @map("id")
+  name      String    @map("name")
+  collegeId Int       @map("college_id")
+  studentId Int       @map("student_id")
+  isActive  Boolean   @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz()
+  college   College   @relation(fields: [collegeId], references: [id])
+  student   Student   @relation(fields: [studentId], references: [id])
+  HOD       HOD?      @relation(fields: [hODId], references: [id])
+  hODId     Int?
+
+  COllegeProfessor   COllegeProfessor? @relation(fields: [cOllegeProfessorId], references: [id])
+  cOllegeProfessorId Int?
+
+  @@unique([name, collegeId])
+  @@map("comps")
+}
+
+model IT {
+  id        Int       @id @default(autoincrement()) @map("id")
+  name      String    @map("name")
+  collegeId Int       @map("college_id")
+  studentId Int       @map("student_id")
+  isActive  Boolean   @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime? @updatedAt @map("updated_at") @db.Timestamptz()
+  college   College   @relation(fields: [collegeId], references: [id])
+  student   Student   @relation(fields: [studentId], references: [id])
+  HOD       HOD?      @relation(fields: [hODId], references: [id])
+  hODId     Int?
+
+  COllegeProfessor   COllegeProfessor? @relation(fields: [cOllegeProfessorId], references: [id])
+  cOllegeProfessorId Int?
+
+  @@unique([name, collegeId])
+  @@map("its")
+}
+
+model ENTC {
+  id                 Int               @id @default(autoincrement()) @map("id")
+  name               String            @map("name")
+  collegeId          Int               @map("college_id")
+  studentId          Int               @map("student_id")
+  hodId              Int               @map("hod_id")
+  isActive           Boolean           @map("is_active")
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt          DateTime?         @updatedAt @map("updated_at") @db.Timestamptz()
+  college            College           @relation(fields: [collegeId], references: [id])
+  student            Student           @relation(fields: [studentId], references: [id])
+  hod                HOD               @relation(fields: [hodId], references: [id])
+  COllegeProfessor   COllegeProfessor? @relation(fields: [cOllegeProfessorId], references: [id])
+  cOllegeProfessorId Int?
+
+  @@unique([name, collegeId])
+  @@map("entcs")
+}
+
+model Student {
+  id          Int      @id @default(autoincrement()) @map("id")
+  studentcode String   @unique @map("studentcode")
+  branch      String
+  class       String
+  firstname   String   @map("firstname")
+  middlename  String   @map("middlename")
+  lastname    String   @map("lastname")
+  phonenumber String   @map("phone_number")
+  email       String
+  age         Int      @map("age")
+  dob         DateTime @map("dob") @db.Timestamptz()
+  ENTC        ENTC[]
+  COMP        COMP[]
+  IT          IT[]
+
+  @@map("students")
+}
+
+model Principal {
+  id            Int       @id @default(autoincrement()) @map("id")
+  principalcode String    @unique @map("pricipalcode")
+  firstname     String    @map("firstname")
+  middlename    String    @map("middlename")
+  lastname      String    @map("lastname")
+  phonenumber   String    @map("phone_number")
+  email         String
+  age           Int       @map("age")
+  dob           DateTime  @map("dob") @db.Timestamptz()
+  College       College[]
+
+  @@map("principals")
+}
+
+model HOD {
+  id          Int      @id @default(autoincrement()) @map("id")
+  hodcode     String   @unique @map("hodcode")
+  branch      String
+  class       String
+  firstname   String   @map("firstname")
+  middlename  String   @map("middlename")
+  lastname    String   @map("lastname")
+  phonenumber String   @map("phone_number")
+  email       String
+  age         Int      @map("age")
+  dob         DateTime @map("dob") @db.Timestamptz()
+  ENTC        ENTC[]
+  COMP        COMP[]
+  IT          IT[]
+
+  @@map("hods")
+}
+
+model CollegeADMIN {
+  id          Int       @id @default(autoincrement()) @map("id")
+  admincode   String    @unique @map("admincode")
+  firstname   String    @map("firstname")
+  middlename  String    @map("middlename")
+  lastname    String    @map("lastname")
+  phonenumber String    @map("phone_number")
+  email       String
+  age         Int       @map("age")
+  dob         DateTime  @map("dob") @db.Timestamptz()
+  College     College[]
+
+  @@map("collegeadmins")
+}
+
+model CollegeProfessor {
+  id            Int      @id @default(autoincrement()) @map("id")
+  professorcode String   @unique @map("professorcode")
+  firstname     String   @map("firstname")
+  middlename    String   @map("middlename")
+  lastname      String   @map("lastname")
+  phonenumber   String   @map("phone_number")
+  email         String
+  age           Int      @map("age")
+  dob           DateTime @map("dob") @db.Timestamptz()
+  ENTC          ENTC[]
+  COMP          COMP[]
+  IT            IT[]
+
+  @@map("collegeprofessors")
+}
